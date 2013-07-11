@@ -25,8 +25,8 @@ $plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__)) 
 define('TSPFC_URL_PATH', $plugin_url);
 
 define('TSPFC_TEMPLATE_PATH', TSPFC_ABS_PATH . '/templates');
-define('TSPFC_TEMPLATE_CACHE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . '/cache');
-define('TSPFC_TEMPLATE_COMPILE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . '/compiled');
+define('TSPFC_TEMPLATE_CACHE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'cache');
+define('TSPFC_TEMPLATE_COMPILE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'compiled');
 
 // Set the file path
 $file_path    = $plugin_abs_path . DIRECTORY_SEPARATOR . basename(__FILE__);
