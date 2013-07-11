@@ -180,7 +180,7 @@ function fn_tspfc_settings_page() {
 		// array merge incase this version has added new options
 		$TSPFC_OPTIONS = array_merge( $TSPFC_OPTIONS , $tspfc_request_options );
 
-		update_option( 'tsp-featured-categories-options', $TSPFC_OPTIONS );
+		update_option( 'tspfc_options', $TSPFC_OPTIONS );
 		$message = __( "Options saved.", 'tsp-featured-categories' );
 	}
 
@@ -319,12 +319,12 @@ function fn_tspfc_register_settings() {
 	global $TSPFC_DEFAULTS,$TSPFC_OPTIONS;
 			
 	// install the option defaults
-	if( !get_option( 'tsp-featured-categories-options' ) ) 
+	if( !get_option( 'tspfc_options' ) ) 
 	{
-		add_option( 'tsp-featured-categories-options', $TSPFC_DEFAULTS, '', 'yes' );
+		add_option( 'tspfc_options', $TSPFC_DEFAULTS, '', 'yes' );
 	}
 
-	$TSPFC_OPTIONS = get_option( 'tsp-featured-categories-options' );// get options from the database
+	$TSPFC_OPTIONS = get_option( 'tspfc_options' );// get options from the database
 	
 	// array merge incase this version has added new options
 	
@@ -360,10 +360,6 @@ function fn_tspfc_plugin_init()
 	{
 		deactivate_plugins( 'tsp_featured_categories/tsp_featured_categories.php' );
 	}//endif
-}
-
-function fn_tspfc_delete_options() {
-	delete_option( 'tsp-featured-categories-options' );
 }
 
 function fn_tspfc_admin_head() 
@@ -408,14 +404,11 @@ add_filter( 'plugin_row_meta', 'fn_tspfp_register_plugin_links', 10, 2 );
 */
 
 // Add global setting for Captcha
-$TSPFC_OPTIONS = get_option( 'tsp-featured-categories-options' );// get the options from the database
+$TSPFC_OPTIONS = get_option( 'tspfc_options' );// get the options from the database
 
 add_action( 'init', 'fn_tspfc_plugin_init' );
 add_action( 'admin_init', 'fn_tspfc_plugin_init' );
 add_action( 'admin_menu', 'fn_tspfc_add_admin_menu' );
 add_action( 'admin_enqueue_scripts', 'fn_tspfc_admin_head' );
-
-register_uninstall_hook( __FILE__, 'fn_tspfc_delete_options' );
-
 
 ?>

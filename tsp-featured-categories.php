@@ -55,8 +55,8 @@ define('TSPFC_DB_VERSION', '0.0.2');
 define('TSPFC_TABLE_NAME', $wpdb->prefix . 'tspfc_termsmeta');
 define('TSPFC_OLD_TABLE_NAME', $wpdb->prefix . 'termsmeta');
 
-register_activation_hook($file_path, 'fn_tspfc_install');
-register_uninstall_hook($file_path, 'fn_tspfc_uninstall');
+register_activation_hook( __FILE__, 'fn_tspfc_install') ;
+register_uninstall_hook( __FILE__, 'fn_tspfc_uninstall' );
 
 //--------------------------------------------------------
 // install plugin
@@ -109,8 +109,9 @@ function fn_tspfc_uninstall()
     if ($wpdb->get_var("show tables like '" . TSPFC_TABLE_NAME . "'") == TSPFC_TABLE_NAME) {
         fn_tspfc_drop_table($wpdb);
     }
-    delete_option("tspfc_db_version");
-    delete_option("tspfc_configuration");
+    delete_option( "tspfc_db_version" );
+    delete_option( "tspfc_configuration" );
+	delete_option( 'tspfc_options' );
 }
 //--------------------------------------------------------
 // Process shortcodes
