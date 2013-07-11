@@ -11,7 +11,7 @@ $TSPFC_DEFAULTS        = array(
 		'maxdesc'      => 60,
 		'layout'       => 0,
 		'widthbox'     => 500,
-		'heightbox'    => 300,
+		'heightbox'    => 80,
 		'orderby'      => 'ID',
 		'widththumb'   => 80,
 		'heightthumb'  => 80,
@@ -162,7 +162,7 @@ if (! function_exists('fn_tsp_plugins_add_menu_render') ){
 }
 
 // Function for display captcha settings page in the admin area
-function fn_tsp_featured_categories_settings_page() {
+function fn_tspfc_settings_page() {
 	global $TSPFC_ADMIN_FIELDS;
 	global $TSPFC_OPTIONS;
 
@@ -314,7 +314,7 @@ function fn_tsp_featured_categories_settings_page() {
 <?php } 
 
 // register settings function
-function fn_tsp_featured_categories_register_settings() {
+function fn_tspfc_register_settings() {
 
 	global $TSPFC_DEFAULTS,$TSPFC_OPTIONS;
 			
@@ -338,24 +338,35 @@ function fn_tsp_featured_categories_register_settings() {
 	}//endelse
 }
 
-function fn_tsp_featured_categories_add_admin_menu() 
+function fn_tspfc_add_admin_menu() 
 {
 	add_menu_page( 'TSP Plugins', 'TSP Plugins', 'manage_options', 'tsp_plugins', 'fn_tsp_plugins_add_menu_render', WP_CONTENT_URL."/plugins/tsp-featured-categories/images/tsp_icon_16.png", 2617638); 
-	add_submenu_page('tsp_plugins', __( 'Featured Categories', 'tsp-featured-categories' ), __( 'Featured Categories', 'tsp-featured-categories' ), 'manage_options', "tsp-featured-categories.php", 'fn_tsp_featured_categories_settings_page');
+	add_submenu_page('tsp_plugins', __( 'Featured Categories', 'tsp-featured-categories' ), __( 'Featured Categories', 'tsp-featured-categories' ), 'manage_options', "tsp-featured-categories.php", 'fn_tspfc_settings_page');
 
 	//call register settings function
-	add_action( 'admin_init', 'fn_tsp_featured_categories_register_settings' );
+	add_action( 'admin_init', 'fn_tspfc_register_settings' );
 }
 
-function fn_tsp_featured_categories_plugin_init() 
+function fn_tspfc_plugin_init() 
 {
+	global $wp_version;
+	
+	if (version_compare($wp_version, "3.5.1", "<"))
+	{
+		wp_die("<pre>TSP Featured Categories Plugin requires WordPress version <strong>3.5.1 or higher</<strong>.<br>You have version <strong>$wp_version</strong> installed.</pre>");
+	}//endif
+	
+	if( is_plugin_active('tsp_featured_categories/tsp_featured_categories.php') ) 
+	{
+		deactivate_plugins( 'tsp_featured_categories/tsp_featured_categories.php' );
+	}//endif
 }
 
-function fn_tsp_featured_categories_delete_options() {
+function fn_tspfc_delete_options() {
 	delete_option( 'tsp-featured-categories-options' );
 }
 
-function fn_tsp_featured_categories_admin_head() 
+function fn_tspfc_admin_head() 
 {
 	wp_register_script( 'tspp-skel_min.js', plugins_url( 'js/skel.min.js', __FILE__ ) );
 	wp_enqueue_script( 'tspp-skel_min.js' );
@@ -364,15 +375,47 @@ function fn_tsp_featured_categories_admin_head()
 	wp_enqueue_style( 'tspfc-admin_stylesheet' );
 }
 
+/*
+function fn_tspfc_plugin_action_links( $links, $file ) 
+{
+	//Static so we don't call plugin_basename on every plugin row.
+	static $this_plugin;
+	if ( ! $this_plugin ) $this_plugin = plugin_basename(__FILE__);
+
+	if ( $file == $this_plugin ){
+			 $settings_link = '<a href="admin.php?page=tsp-featured-categories.php">' . __( 'Settings', 'tsp-featured-categories' ) . '</a>';
+			 array_unshift( $links, $settings_link );
+	}
+	return $links;
+} // end function fn_tspfc_plugin_action_links
+
+// adds "Settings" link to the plugin action page
+add_filter( 'plugin_action_links', 'fn_tspfc_plugin_action_links', 10, 2 );
+
+function fn_tspfc_register_plugin_links($links, $file) 
+{
+	$base = plugin_basename(__FILE__);
+	if ($file == $base) {
+		$links[] = '<a href="admin.php?page=tsp-featured-categories.php">' . __( 'Settings', 'tsp-featured-categories' ) . '</a>';
+		$links[] = '<a href="http://wordpress.org/extend/plugins/tsp-featured-categories/faq/" target="_blank">' . __( 'FAQ', 'tsp-featured-categories' ) . '</a>';
+		$links[] = '<a href="http://lab.thesoftwarepeople.com/tracker/wordpress-fc" target="_blank">' . __( 'Support', 'tsp-featured-categories' ) . '</a>';
+	}
+	return $links;
+} // end function fn_tspfc_register_plugin_links
+
+//Additional links on the plugin page
+add_filter( 'plugin_row_meta', 'fn_tspfp_register_plugin_links', 10, 2 );
+*/
+
 // Add global setting for Captcha
 $TSPFC_OPTIONS = get_option( 'tsp-featured-categories-options' );// get the options from the database
 
-add_action( 'init', 'fn_tsp_featured_categories_plugin_init' );
-add_action( 'admin_init', 'fn_tsp_featured_categories_plugin_init' );
-add_action( 'admin_menu', 'fn_tsp_featured_categories_add_admin_menu' );
-add_action( 'admin_enqueue_scripts', 'fn_tsp_featured_categories_admin_head' );
+add_action( 'init', 'fn_tspfc_plugin_init' );
+add_action( 'admin_init', 'fn_tspfc_plugin_init' );
+add_action( 'admin_menu', 'fn_tspfc_add_admin_menu' );
+add_action( 'admin_enqueue_scripts', 'fn_tspfc_admin_head' );
 
-register_uninstall_hook( __FILE__, 'fn_tsp_featured_categories_delete_options' );
+register_uninstall_hook( __FILE__, 'fn_tspfc_delete_options' );
 
 
 ?>
