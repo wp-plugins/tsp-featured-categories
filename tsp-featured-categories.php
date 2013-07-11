@@ -25,6 +25,8 @@ $plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__)) 
 define('TSPFC_URL_PATH', $plugin_url);
 
 define('TSPFC_TEMPLATE_PATH', TSPFC_ABS_PATH . '/templates');
+define('TSPFC_TEMPLATE_CACHE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . '/cache');
+define('TSPFC_TEMPLATE_COMPILE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . '/compiled');
 
 // Set the file path
 $file_path    = $plugin_abs_path . DIRECTORY_SEPARATOR . basename(__FILE__);
@@ -47,17 +49,69 @@ if (!class_exists('Smarty'))
 // Initialization and Hooks
 global $wpdb;
 global $wp_version;
-global $tspfc_version;
-global $tspfc_db_version;
-global $tspfc_table_name;
 
-$tspfc_version    = '1.0.0';
-$tspfc_db_version = '0.0.1';
-$tspfc_table_name = $wpdb->prefix . 'termsmeta';
+define('TSPFC_VERSION', '1.0.0');
+define('TSPFC_DB_VERSION', '0.0.2');
+define('TSPFC_TABLE_NAME', $wpdb->prefix . 'tspfc_termsmeta');
+define('TSPFC_OLD_TABLE_NAME', $wpdb->prefix . 'termsmeta');
 
 register_activation_hook($file_path, 'fn_tspfc_install');
 register_uninstall_hook($file_path, 'fn_tspfc_uninstall');
 
+//--------------------------------------------------------
+// install plugin
+//--------------------------------------------------------
+function fn_tspfc_install()
+{
+    global $wpdb;
+    
+    $new_install = false;
+    
+    // create table on first install
+    if ($wpdb->get_var("show tables like '" . TSPFC_TABLE_NAME . "'") != TSPFC_TABLE_NAME) {
+        fn_tspfc_create_table($wpdb);
+        add_option("tspfc_db_version", TSPFC_DB_VERSION);
+        add_option("tspfc_configuration", '');
+        $new_install = true;
+    }
+    
+    // On plugin update only the version number is updated.
+    $installed_ver = get_option("tspfc_db_version");
+    if ($installed_ver != TSPFC_DB_VERSION) {
+        update_option("tspfc_db_version", TSPFC_DB_VERSION);
+    }
+    
+	// if old table exists and this is a new install, copy its contents into the new table
+    if ($new_install && $wpdb->get_var("show tables like '" . TSPFC_OLD_TABLE_NAME ."'") == TSPFC_OLD_TABLE_NAME) {
+        fn_tspfc_copy_table($wpdb);
+    }
+    
+    $status = @chmod(TSPFC_TEMPLATE_PATH, 0777);
+    //if (!$status)
+    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_PATH .'. Please change permissions to 0777 manually.</pre>');
+    
+    $status = @chmod(TSPFC_TEMPLATE_CACHE_PATH, 0777);
+    //if (!$status)
+    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_CACHE_PATH .'. Please change permissions to 0777 manually.</pre>');
+
+    $status = @chmod(TSPFC_TEMPLATE_COMPILE_PATH, 0777);
+    //if (!$status)
+    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_COMPILE_PATH .'. Please change permissions to 0777 manually.</pre>');
+}
+//--------------------------------------------------------
+// uninstall plugin
+//--------------------------------------------------------
+function fn_tspfc_uninstall()
+{
+    global $wpdb;
+    
+    // delete table
+    if ($wpdb->get_var("show tables like '" . TSPFC_TABLE_NAME . "'") == TSPFC_TABLE_NAME) {
+        fn_tspfc_drop_table($wpdb);
+    }
+    delete_option("tspfc_db_version");
+    delete_option("tspfc_configuration");
+}
 //--------------------------------------------------------
 // Process shortcodes
 //--------------------------------------------------------
@@ -81,47 +135,11 @@ function fn_tspfc_process_shortcodes($att)
 add_shortcode('tsp-featured-categories', 'fn_tspfc_process_shortcodes');
 add_shortcode('tsp_featured_categories', 'fn_tspfc_process_shortcodes');
 //--------------------------------------------------------
-// install plugin
-//--------------------------------------------------------
-function fn_tspfc_install()
-{
-    global $wpdb;
-    global $tspfc_table_name;
-    global $tspfc_db_version;
-    
-    // create table on first install
-    if ($wpdb->get_var("show tables like '$tspfc_table_name'") != $tspfc_table_name) {
-        fn_tspfc_create_table($wpdb, $tspfc_table_name);
-        add_option("tspfc_db_version", $tspfc_db_version);
-        add_option("tspfc_configuration", '');
-    }
-    
-    // On plugin update only the version number is updated.
-    $installed_ver = get_option("tspfc_db_version");
-    if ($installed_ver != $tspfc_db_version) {
-        update_option("tspfc_db_version", $tspfc_db_version);
-    }
-}
-//--------------------------------------------------------
-// uninstall plugin
-//--------------------------------------------------------
-function fn_tspfc_uninstall()
-{
-    global $wpdb;
-    global $tspfc_table_name;
-    // delete table
-    if ($wpdb->get_var("show tables like '$tspfc_table_name'") == $tspfc_table_name) {
-        fn_tspfc_drop_table($wpdb, $tspfc_table_name);
-    }
-    delete_option("tspfc_db_version");
-    delete_option("tspfc_configuration");
-}
-//--------------------------------------------------------
 // create table to store metadata
 //--------------------------------------------------------
-function fn_tspfc_create_table($wpdb, $table_name)
+function fn_tspfc_create_table($wpdb)
 {
-    $sql     = "CREATE TABLE  " . $table_name . " (
+    $sql     = "CREATE TABLE  " . TSPFC_TABLE_NAME . " (
           meta_id bigint(20) NOT NULL auto_increment,
           terms_id bigint(20) NOT NULL default '0',
           meta_key varchar(255) default NULL,
@@ -135,10 +153,25 @@ function fn_tspfc_create_table($wpdb, $table_name)
 //--------------------------------------------------------
 // delete table to store metadata
 //--------------------------------------------------------
-function fn_tspfc_drop_table($wpdb, $table_name)
+function fn_tspfc_drop_table($wpdb)
 {
-    $sql     = "DROP TABLE  " . $table_name . " ;";
+    $sql     = "DROP TABLE  " . TSPFC_TABLE_NAME . " ;";
     $results = $wpdb->query($sql);
+}
+//--------------------------------------------------------
+// copy old table data to new one
+//--------------------------------------------------------
+function fn_tspfc_copy_table($wpdb)
+{
+    $sql     = "SELECT * FROM `" . TSPFC_OLD_TABLE_NAME . "` WHERE `meta_key` = 'featured' OR `meta_key` = 'image';";
+    $entries = $wpdb->get_results($sql, ARRAY_A);
+    
+    foreach ( $entries as $e ) 
+    {
+    	$sql = "REPLACE INTO `" . TSPFC_TABLE_NAME . "` (`terms_id`,`meta_key`,`meta_value`) VALUES ('{$e['terms_id']}','{$e['meta_key']}', '{$e['meta_value']}');";
+    	$results = $wpdb->query($sql);
+    	
+    }//endforeach
 }
 //--------------------------------------------------------
 // Get admin scripts
@@ -190,15 +223,14 @@ function fn_tspfc_get_category_metadata($terms_id, $key, $single = false)
 function fn_tspfc_add_category_metadata($terms_id, $meta_key, $meta_value, $unique = false)
 {
     global $wpdb;
-    global $tspfc_table_name;
     
     // expected_slashed ($meta_key)
     $meta_key   = stripslashes($meta_key);
     $meta_value = stripslashes($meta_value);
     
-    if ($unique && $wpdb->get_var($wpdb->prepare("SELECT meta_key FROM $tspfc_table_name WHERE meta_key = %s AND terms_id = %d", $meta_key, $terms_id))) return false;
+    if ($unique && $wpdb->get_var($wpdb->prepare("SELECT meta_key FROM " . TSPFC_TABLE_NAME . " WHERE meta_key = %s AND terms_id = %d", $meta_key, $terms_id))) return false;
     $meta_value = maybe_serialize($meta_value);
-    $wpdb->insert($tspfc_table_name, compact('terms_id', 'meta_key', 'meta_value'));
+    $wpdb->insert(TSPFC_TABLE_NAME, compact('terms_id', 'meta_key', 'meta_value'));
     
     wp_cache_delete($terms_id, 'terms_meta');
     
@@ -210,23 +242,22 @@ function fn_tspfc_add_category_metadata($terms_id, $meta_key, $meta_value, $uniq
 function fn_tspfc_delete_category_metadata($terms_id, $key, $value = '')
 {
     global $wpdb;
-    global $tspfc_table_name;
     
     // expected_slashed ($key, $value)
     $key     = stripslashes($key);
     $value   = stripslashes($value);
     
     if (empty($value)) {
-        $sql1    = $wpdb->prepare("SELECT meta_id FROM $tspfc_table_name WHERE terms_id = %d AND meta_key = %s", $terms_id, $key);
+        $sql1    = $wpdb->prepare("SELECT meta_id FROM " . TSPFC_TABLE_NAME . " WHERE terms_id = %d AND meta_key = %s", $terms_id, $key);
         $meta_id = $wpdb->get_var($sql1);
     } else {
-        $sql2    = $wpdb->prepare("SELECT meta_id FROM $tspfc_table_name WHERE terms_id = %d AND meta_key = %s AND meta_value = %s", $terms_id, $key, $value);
+        $sql2    = $wpdb->prepare("SELECT meta_id FROM " . TSPFC_TABLE_NAME . " WHERE terms_id = %d AND meta_key = %s AND meta_value = %s", $terms_id, $key, $value);
         $meta_id = $wpdb->get_var($sql2);
     }
     
     if (!$meta_id) return false;
-    if (empty($value)) $wpdb->query($wpdb->prepare("DELETE FROM $tspfc_table_name WHERE terms_id = %d AND meta_key = %s", $terms_id, $key));
-    else $wpdb->query($wpdb->prepare("DELETE FROM $tspfc_table_name WHERE terms_id = %d AND meta_key = %s AND meta_value = %s", $terms_id, $key, $value));
+    if (empty($value)) $wpdb->query($wpdb->prepare("DELETE FROM " . TSPFC_TABLE_NAME . " WHERE terms_id = %d AND meta_key = %s", $terms_id, $key));
+    else $wpdb->query($wpdb->prepare("DELETE FROM " . TSPFC_TABLE_NAME . " WHERE terms_id = %d AND meta_key = %s AND meta_value = %s", $terms_id, $key, $value));
     
     wp_cache_delete($terms_id, 'terms_meta');
     
@@ -238,13 +269,12 @@ function fn_tspfc_delete_category_metadata($terms_id, $key, $value = '')
 function fn_tspfc_update_category_metadata($terms_id, $meta_key, $meta_value, $prev_value = '')
 {
     global $wpdb;
-    global $tspfc_table_name;
     
     // expected_slashed ($meta_key)
     $meta_key   = stripslashes($meta_key);
     $meta_value = stripslashes($meta_value);
     
-    if (!$wpdb->get_var($wpdb->prepare("SELECT meta_key FROM $tspfc_table_name WHERE meta_key = %s AND terms_id = %d", $meta_key, $terms_id))) {
+    if (!$wpdb->get_var($wpdb->prepare("SELECT meta_key FROM " . TSPFC_TABLE_NAME . " WHERE meta_key = %s AND terms_id = %d", $meta_key, $terms_id))) {
         return fn_tspfc_add_category_metadata($terms_id, $meta_key, $meta_value);
     }
     
@@ -257,7 +287,7 @@ function fn_tspfc_update_category_metadata($terms_id, $meta_key, $meta_value, $p
         $where['meta_value']            = $prev_value;
     }
     
-    $wpdb->update($tspfc_table_name, $data, $where);
+    $wpdb->update(TSPFC_TABLE_NAME, $data, $where);
     
     wp_cache_delete($terms_id, 'terms_meta');
     
@@ -269,7 +299,6 @@ function fn_tspfc_update_category_metadata($terms_id, $meta_key, $meta_value, $p
 function fn_tspfc_update_category_meta_cache($terms_ids)
 {
     global $wpdb;
-    global $tspfc_table_name;
     
     if (empty($terms_ids)) return false;
     if (!is_array($terms_ids)) {
@@ -289,7 +318,7 @@ function fn_tspfc_update_category_meta_cache($terms_ids)
     // Get terms-meta info
     $id_list   = join(',', $ids);
     $cache     = array();
-    if ($meta_list = $wpdb->get_results("SELECT terms_id, meta_key, meta_value FROM $tspfc_table_name WHERE terms_id IN ($id_list) ORDER BY terms_id, meta_key", ARRAY_A)) {
+    if ($meta_list = $wpdb->get_results("SELECT terms_id, meta_key, meta_value FROM " . TSPFC_TABLE_NAME . " WHERE terms_id IN ($id_list) ORDER BY terms_id, meta_key", ARRAY_A)) {
         foreach ((array)$meta_list as $metarow) {
             $mpid      = (int)$metarow['terms_id'];
             $mkey      = $metarow['meta_key'];
@@ -372,9 +401,9 @@ function fn_tspfc_display($args = null, $echo = true)
 	    
 	$smarty = new Smarty;
 	$smarty->setTemplateDir(TSPFC_TEMPLATE_PATH);
-	$smarty->setCompileDir(TSPFC_TEMPLATE_PATH.'/compiled/');
-	$smarty->setCacheDir(TSPFC_TEMPLATE_PATH.'/cache/');
-	
+	$smarty->setCompileDir(TSPFC_TEMPLATE_CACHE_PATH);
+	$smarty->setCacheDir(TSPFC_TEMPLATE_COMPILE_PATH);
+
 	$return_HTML = "";
 	
 	$fp = $TSPFC_OPTIONS;
