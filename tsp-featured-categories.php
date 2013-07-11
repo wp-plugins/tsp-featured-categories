@@ -10,6 +10,11 @@ Copyright: 		Copyright © 2013 The Software People, LLC (www.thesoftwarepeople.c
 License: 		APACHE v2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 */
 
+define( 'TSPFC_REQUIRED_WP_VERSION', '3.5.1' );
+define( 'TSPFC_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+
+require_once(ABSPATH . 'wp-admin/includes/plugin.php' );
+
 // Get the plugin path
 if (!defined('WP_CONTENT_DIR')) define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
 if (!defined('DIRECTORY_SEPARATOR')) {
@@ -24,9 +29,11 @@ define('TSPFC_ABS_PATH', $plugin_abs_path);
 $plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__)) . '/';
 define('TSPFC_URL_PATH', $plugin_url);
 
+$upload_dir = wp_upload_dir();
+
 define('TSPFC_TEMPLATE_PATH', TSPFC_ABS_PATH . '/templates');
-define('TSPFC_TEMPLATE_CACHE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'cache');
-define('TSPFC_TEMPLATE_COMPILE_PATH', TSPFC_TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'compiled');
+define('TSPFC_TEMPLATE_CACHE_PATH', $upload_dir['basedir'] . '/tsp/fc/cache');
+define('TSPFC_TEMPLATE_COMPILE_PATH', $upload_dir['basedir'] . '/tsp/fc/compiled');
 
 // Set the file path
 $file_path    = $plugin_abs_path . DIRECTORY_SEPARATOR . basename(__FILE__);
@@ -36,7 +43,6 @@ $asolute_path = dirname(__FILE__) . DIRECTORY_SEPARATOR;
 define('TSPFC_ABSPATH', $asolute_path);
 
 
-include_once(ABSPATH . 'wp-admin/includes/plugin.php' );
 include_once(TSPFC_ABS_PATH . '/includes/settings.inc.php');
 
 
@@ -86,17 +92,20 @@ function fn_tspfc_install()
         fn_tspfc_copy_table($wpdb);
     }
     
-    $status = @chmod(TSPFC_TEMPLATE_PATH, 0777);
-    //if (!$status)
-    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_PATH .'. Please change permissions to 0777 manually.</pre>');
-    
-    $status = @chmod(TSPFC_TEMPLATE_CACHE_PATH, 0777);
-    //if (!$status)
-    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_CACHE_PATH .'. Please change permissions to 0777 manually.</pre>');
-
-    $status = @chmod(TSPFC_TEMPLATE_COMPILE_PATH, 0777);
-    //if (!$status)
-    //	wp_die('<pre>Could not set proper permissions for ' . TSPFC_TEMPLATE_COMPILE_PATH .'. Please change permissions to 0777 manually.</pre>');
+	$message = "";
+	
+	if (!wp_mkdir_p( TSPFC_TEMPLATE_CACHE_PATH ))
+		$message .= "<br>Unable to create " . TSPFC_TEMPLATE_CACHE_PATH . " directory. Please create this directory manually via FTP or cPanel.";
+	else
+		@chmod( TSPFC_TEMPLATE_CACHE_PATH, 0777 );
+	
+	
+	if (!wp_mkdir_p( TSPFC_TEMPLATE_COMPILE_PATH ))
+		$message .= "<br>Unable to create " . TSPFC_TEMPLATE_COMPILE_PATH . " directory. Please create this directory manually via FTP or cPanel.";
+	else
+		@chmod( TSPFC_TEMPLATE_COMPILE_PATH, 0777 );
+	
+	return $message;
 }
 //--------------------------------------------------------
 // uninstall plugin

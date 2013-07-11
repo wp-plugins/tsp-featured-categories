@@ -351,9 +351,9 @@ function fn_tspfc_plugin_init()
 {
 	global $wp_version;
 	
-	if (version_compare($wp_version, "3.5.1", "<"))
+	if (version_compare($wp_version, TSPFC_REQUIRED_WP_VERSION, "<"))
 	{
-		wp_die("<pre>TSP Featured Categories Plugin requires WordPress version <strong>3.5.1 or higher</<strong>.<br>You have version <strong>$wp_version</strong> installed.</pre>");
+		wp_die("<pre>TSP Featured Categories Plugin requires WordPress version <strong>" . TSPFC_REQUIRED_WP_VERSION . " or higher</<strong>.<br>You have version <strong>$wp_version</strong> installed.</pre>");
 	}//endif
 	
 	if( is_plugin_active('tsp_featured_categories/tsp_featured_categories.php') ) 
