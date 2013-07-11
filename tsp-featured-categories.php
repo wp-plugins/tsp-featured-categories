@@ -19,7 +19,7 @@ if (!defined('DIRECTORY_SEPARATOR')) {
 
 // Set the abs plugin path
 define('PLUGIN_ABS_PATH', ABSPATH . PLUGINDIR );
-$plugin_abs_path = ABSPATH . PLUGINDIR . DIRECTORY_SEPARATOR . "tsp_featured_categories";
+$plugin_abs_path = ABSPATH . PLUGINDIR . DIRECTORY_SEPARATOR . "tsp-featured-categories";
 define('TSPFC_ABS_PATH', $plugin_abs_path);
 $plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__)) . '/';
 define('TSPFC_URL_PATH', $plugin_url);
@@ -35,6 +35,12 @@ define('TSPFC_ABSPATH', $asolute_path);
 
 
 include_once(TSPFC_ABS_PATH . '/includes/settings.inc.php');
+
+if (!class_exists('Smarty'))
+{
+    if (file_exists(TSPFC_ABS_PATH . '/libs/Smarty.class.php'))
+        require_once TSPFC_ABS_PATH . '/libs/Smarty.class.php';
+}
 
 // Initialization and Hooks
 global $wpdb;
@@ -58,7 +64,7 @@ function fn_tsp_featured_categories_process_shortcodes($att)
 	global $TSPFC_OPTIONS;
 	
 	if ( is_feed() )
-		return '[tsp_featured_categories]';
+		return '[tsp-featured-categories]';
 
 	$options = $TSPFC_OPTIONS;
 	
@@ -70,7 +76,7 @@ function fn_tsp_featured_categories_process_shortcodes($att)
 	return $output;
 }
 
-add_shortcode('tsp_featured_categories', 'fn_tsp_featured_categories_process_shortcodes');
+add_shortcode('tsp-featured-categories', 'fn_tsp_featured_categories_process_shortcodes');
 //--------------------------------------------------------
 // install plugin
 //--------------------------------------------------------
@@ -306,7 +312,8 @@ function fn_tsp_featured_categories_update_category_meta_cache($terms_ids)
 //--------------------------------------------------------
 function fn_tsp_featured_categories_enqueue_styles()
 {
-    wp_enqueue_style('tsp_featured_categories.css', plugins_url('tsp_featured_categories.css', __FILE__ ));
+	wp_register_style( 'tspfc-stylesheet', plugins_url( 'tsp-featured-categories.css', __FILE__ ) );
+	wp_enqueue_style( 'tspfc-stylesheet' );
 }
 
 add_action('wp_print_styles', 'fn_tsp_featured_categories_enqueue_styles');
@@ -483,12 +490,12 @@ function fn_tsp_featured_categories_display($args = null, $echo = true)
 //--------------------------------------------------------
 // Register widget
 //--------------------------------------------------------
-function tsp_featured_categories_widget_init()
+function fn_tsp_featured_categories_widget_init()
 {
     register_widget('TSP_Featured_Categories_Widget');
 }
 // Add functions to init
-add_action('widgets_init', 'tsp_featured_categories_widget_init');
+add_action('widgets_init', 'fn_tsp_featured_categories_widget_init');
 //--------------------------------------------------------
 class TSP_Featured_Categories_Widget extends WP_Widget
 {
@@ -499,17 +506,17 @@ class TSP_Featured_Categories_Widget extends WP_Widget
     {
         // Get widget options
         $widget_options  = array(
-            'classname'                 => 'widget_tsp_featured_categories',
-            'description'               => __('This widget allows you to add in your sites themes a list of featured categories.', 'tsp_featured_categories')
+            'classname'                 => 'widget-tsp-featured-categories',
+            'description'               => __('This widget allows you to add in your sites themes a list of featured categories.', 'tsp-featured-categories')
         );
         // Get control options
         $control_options = array(
             'width' => 300,
             'height' => 350,
-            'id_base' => 'widget_tsp_featured_categories'
+            'id_base' => 'widget-tsp-featured-categories'
         );
         // Create the widget
-        parent::__construct('widget_tsp_featured_categories', __('TSP Featured Categories', 'tsp_featured_categories') , $widget_options, $control_options);
+        parent::__construct('widget-tsp-featured-categories', __('TSP Featured Categories', 'tsp-featured-categories') , $widget_options, $control_options);
     }
     //--------------------------------------------------------
     // initialize the widget
@@ -580,7 +587,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('title'); ?>"><?php
-        _e('Title:', 'tsp_featured_categories') ?></label>
+        _e('Title:', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('title'); ?>" name="<?php
         echo $this->get_field_name('title'); ?>" value="<?php
@@ -591,7 +598,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('numbercats'); ?>"><?php
-        _e('How many categories do you want to display?', 'tsp_featured_categories') ?></label>
+        _e('How many categories do you want to display?', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('numbercats'); ?>" name="<?php
         echo $this->get_field_name('numbercats'); ?>" value="<?php
@@ -601,16 +608,16 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('cattype'); ?>"><?php
-        _e('Category Type.', 'tsp_featured_categories') ?></label>
+        _e('Category Type.', 'tsp-featured-categories') ?></label>
    <select name="<?php
         echo $this->get_field_name('cattype'); ?>" id="<?php
         echo $this->get_field_id('cattype'); ?>" >
       <option class="level-0" value="all" <?php
         if ($instance['cattype'] == "all") echo " selected='selected'" ?>><?php
-        _e('All', 'tsp_featured_categories') ?></option>
+        _e('All', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="featured" <?php
         if ($instance['cattype'] == "featured") echo " selected='selected'" ?>><?php
-        _e('Featured Only', 'tsp_featured_categories') ?></option>
+        _e('Featured Only', 'tsp-featured-categories') ?></option>
    </select>
 </p>
 
@@ -618,16 +625,16 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('hideempty'); ?>"><?php
-        _e('Hide Empty Categories?', 'tsp_featured_categories') ?></label>
+        _e('Hide Empty Categories?', 'tsp-featured-categories') ?></label>
    <select name="<?php
         echo $this->get_field_name('hideempty'); ?>" id="<?php
         echo $this->get_field_id('hideempty'); ?>" >
       <option class="level-0" value="1" <?php
         if ($instance['hideempty'] == 1) echo " selected='selected'" ?>><?php
-        _e('Yes', 'tsp_featured_categories') ?></option>
+        _e('Yes', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="0" <?php
         if ($instance['hideempty'] == 0) echo " selected='selected'" ?>><?php
-        _e('No', 'tsp_featured_categories') ?></option>
+        _e('No', 'tsp-featured-categories') ?></option>
    </select>
 </p>
 
@@ -635,16 +642,16 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('hidedesc'); ?>"><?php
-        _e('Hide Category Descriptions?', 'tsp_featured_categories') ?></label>
+        _e('Hide Category Descriptions?', 'tsp-featured-categories') ?></label>
    <select name="<?php
         echo $this->get_field_name('hidedesc'); ?>" id="<?php
         echo $this->get_field_id('hidedesc'); ?>" >
       <option class="level-0" value="Y" <?php
         if ($instance['hidedesc'] == "Y") echo " selected='selected'" ?>><?php
-        _e('Yes', 'tsp_featured_categories') ?></option>
+        _e('Yes', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="N" <?php
         if ($instance['hidedesc'] == "N") echo " selected='selected'" ?>><?php
-        _e('No', 'tsp_featured_categories') ?></option>
+        _e('No', 'tsp-featured-categories') ?></option>
    </select>
 </p>
 
@@ -652,7 +659,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('maxdesc'); ?>"><?php
-        _e('Max chars to display for description', 'tsp_featured_categories') ?></label>
+        _e('Max chars to display for description', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('maxdesc'); ?>" name="<?php
         echo $this->get_field_name('maxdesc'); ?>" value="<?php
@@ -663,19 +670,19 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('layout'); ?>"><?php
-        _e('Choose layout of the category preview:', 'tsp_featured_categories') ?></label>
+        _e('Choose layout of the category preview:', 'tsp-featured-categories') ?></label>
    <select name="<?php
         echo $this->get_field_name('layout'); ?>" id="<?php
         echo $this->get_field_id('layout'); ?>" >
       <option class="level-0" value="0" <?php
         if ($instance['layout'] == "0") echo " selected='selected'" ?>><?php
-        _e('Image (left), Title, Text (right) [Horizontal]', 'tsp_featured_categories') ?></option>
+        _e('Image (left), Title, Text (right) [Horizontal]', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="1" <?php
         if ($instance['layout'] == "1") echo " selected='selected'" ?>><?php
-        _e('Image (left), Title, Text (right) [Vertical]', 'tsp_featured_categories') ?></option>
+        _e('Image (left), Title, Text (right) [Vertical]', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="2" <?php
         if ($instance['layout'] == "2") echo " selected='selected'" ?>><?php
-        _e('Scrolling Gallery [Horizontal]', 'tsp_featured_categories') ?></option>
+        _e('Scrolling Gallery [Horizontal]', 'tsp-featured-categories') ?></option>
    </select>
 </p>
 
@@ -683,7 +690,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('parentcat'); ?>"><?php
-        _e('Parent category', 'tsp_featured_categories') ?></label>
+        _e('Parent category', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('parentcat'); ?>" name="<?php
         echo $this->get_field_name('parentcat'); ?>" value="<?php
@@ -695,7 +702,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('widthbox'); ?>"><?php
-        _e('Box Width (Scrolling Gallery Only)', 'tsp_featured_categories') ?></label>
+        _e('Box Width (Scrolling Gallery Only)', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('widthbox'); ?>" name="<?php
         echo $this->get_field_name('widthbox'); ?>" value="<?php
@@ -706,7 +713,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('heightbox'); ?>"><?php
-        _e('Box Height (Scrolling Gallery Only)', 'tsp_featured_categories') ?></label>
+        _e('Box Height (Scrolling Gallery Only)', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('heightbox'); ?>" name="<?php
         echo $this->get_field_name('heightbox'); ?>" value="<?php
@@ -717,22 +724,22 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('orderby'); ?>"><?php
-        _e('Choose type of order:', 'tsp_featured_categories') ?></label>
+        _e('Choose type of order:', 'tsp-featured-categories') ?></label>
    <select name="<?php
         echo $this->get_field_name('orderby'); ?>" id="<?php
         echo $this->get_field_id('orderby'); ?>" >
       <option class="level-0" value="none" <?php
         if ($instance['orderby'] == "none") echo " selected='selected'" ?>><?php
-        _e('None', 'tsp_featured_categories') ?></option>
+        _e('None', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="name" <?php
         if ($instance['orderby'] == "name") echo " selected='selected'" ?>><?php
-        _e('Name', 'tsp_featured_categories') ?></option>
+        _e('Name', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="count" <?php
         if ($instance['orderby'] == "count") echo " selected='selected'" ?>><?php
-        _e('Count', 'tsp_featured_categories') ?></option>
+        _e('Count', 'tsp-featured-categories') ?></option>
       <option class="level-0" value="id" <?php
         if ($instance['orderby'] == "id") echo " selected='selected'" ?>><?php
-        _e('ID', 'tsp_featured_categories') ?></option>
+        _e('ID', 'tsp-featured-categories') ?></option>
    </select>
 </p>
 
@@ -740,7 +747,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('widththumb'); ?>"><?php
-        _e('Thumbnail Width', 'tsp_featured_categories') ?></label>
+        _e('Thumbnail Width', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('widththumb'); ?>" name="<?php
         echo $this->get_field_name('widththumb'); ?>" value="<?php
@@ -751,7 +758,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('heightthumb'); ?>"><?php
-        _e('Thumbnail Height', 'tsp_featured_categories') ?></label>
+        _e('Thumbnail Height', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('heightthumb'); ?>" name="<?php
         echo $this->get_field_name('heightthumb'); ?>" value="<?php
@@ -762,7 +769,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('beforetitle'); ?>"><?php
-        _e('HTML Before Title', 'tsp_featured_categories') ?></label>
+        _e('HTML Before Title', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('beforetitle'); ?>" name="<?php
         echo $this->get_field_name('beforetitle'); ?>" value="<?php
@@ -773,7 +780,7 @@ class TSP_Featured_Categories_Widget extends WP_Widget
 <p>
    <label for="<?php
         echo $this->get_field_id('aftertitle'); ?>"><?php
-        _e('HTML After Title', 'tsp_featured_categories') ?></label>
+        _e('HTML After Title', 'tsp-featured-categories') ?></label>
    <input id="<?php
         echo $this->get_field_id('aftertitle'); ?>" name="<?php
         echo $this->get_field_name('aftertitle'); ?>" value="<?php
@@ -828,10 +835,10 @@ function fn_tsp_featured_categories_box($tag)
 	$smarty->setCompileDir(TSPFC_TEMPLATE_PATH.'/compiled/');
 	$smarty->setCacheDir(TSPFC_TEMPLATE_PATH.'/cache/');
 
-	$smarty->assign("stylesheet", TSPFC_URL_PATH."/tsp_featured_categories.css", true);
+	$smarty->assign("stylesheet", TSPFC_URL_PATH."/tsp-featured-categories.css", true);
 	$smarty->assign("cat_ID", $category_ID, true);
-	$smarty->assign("title", __('TSP Featured Categories', 'tsp_featured_categories'), true);
-	$smarty->assign("subtitle", __('Featured category?', 'tsp_featured_categories'), true);
+	$smarty->assign("title", __('TSP Featured Categories', 'tsp-featured-categories'), true);
+	$smarty->assign("subtitle", __('Featured category?', 'tsp-featured-categories'), true);
 	$smarty->assign("featured", $featured, true);
 	$smarty->assign("cur_image", $cur_image, true);
 	$smarty->assign("field_prefix", "tspfc_image", true);
