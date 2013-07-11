@@ -19,7 +19,7 @@ if (!defined('DIRECTORY_SEPARATOR')) {
 
 // Set the abs plugin path
 define('PLUGIN_ABS_PATH', ABSPATH . PLUGINDIR );
-$plugin_abs_path = ABSPATH . PLUGINDIR . DIRECTORY_SEPARATOR . "tsp-featured-categories";
+$plugin_abs_path = PLUGIN_ABS_PATH . DIRECTORY_SEPARATOR . "tsp-featured-categories";
 define('TSPFC_ABS_PATH', $plugin_abs_path);
 $plugin_url = WP_CONTENT_URL . '/plugins/' . plugin_basename(dirname(__FILE__)) . '/';
 define('TSPFC_URL_PATH', $plugin_url);
