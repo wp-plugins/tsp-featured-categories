@@ -37,7 +37,8 @@ Add a `Featured Categories` to posts and pages by using a shortcode inside your 
 
 = I've installed the plugin but my posts are not displaying? =
 
-Make sure the folder `/wp-content/plugins/tsp-featured-categories/templates/` has recursive, 777 permissions
+1. Make sure the folder `/wp-content/uploads/` has recursive, 777 permissions
+2. Make sure you are listing all `categories` and/or `parentcat` is empty or the `parentcat` has children categories.
 
 == Screenshots ==
 
